@@ -1,0 +1,188 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date: 11/04/2024 08:36:44 PM
+// Design Name: 
+// Module Name: xadc_top
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
+
+module xadc_top( 
+    input clk,
+    input rst,
+    input [15:0] vp_in,
+    input [15:0] vn_in,
+    output adc_rdy,
+    output [15:0] temp_value,
+    
+    
+    
+    
+    
+    // Seven-segment display outputs for J1 (PMODA)
+    output SEG_A_J1,
+    output SEG_B_J1,
+    output SEG_C_J1,
+    output SEG_D_J1,
+    output SEG_E_J1,
+    output SEG_F_J1,
+    output SEG_G_J1,
+    output SEG_DP_J1,
+    
+    // Seven-segment display outputs for J2 (PMODB)
+    output SEG_A_J2,
+    output SEG_B_J2,
+    output SEG_C_J2,
+    output SEG_D_J2,
+    output SEG_E_J2,
+    output SEG_F_J2,
+    output SEG_G_J2,
+    output SEG_DP_J2
+    
+    // Debugging signal
+    //output [15:0] average_data // No internal wire needed for average_data
+);
+
+    // External wires
+    wire drdy_out;
+    wire [15:0] do_out;
+    wire clk_in1;
+    wire clk_25m;
+    wire [15:0] temp_data;
+    wire [6:0] daddr_in;
+    wire dwe_in;
+    wire avg_en;
+    wire den_in;
+    wire [15:0] di_in;
+    wire [15:0] average_data;
+    wire [15:0] xadc_temp_data;
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    // Instantiation of xadc_wiz_0
+    xadc_wiz_0 xadc (
+      .di_in(16'b0),
+      .daddr_in(daddr_in),
+      .den_in(den_in),
+      .dwe_in(dwe_in),
+      .drdy_out(drdy_out),
+      .do_out(do_out),
+      .dclk_in(clk_25m),
+      .reset_in(rst),
+      .vp_in(vp_in),
+      .vn_in(vn_in),
+      .eoc_out(eoc_out),
+      .busy_out(busy_out)
+    );
+    
+    
+    
+wire clk_buf;
+BUFG bufg_inst (
+    .I(clk),      // Original clock from constraints
+    .O(clk_buf)   // Buffered clock for ILA and other modules
+);
+
+ila_0 ila (
+    .clk(clk_buf),              // input wire clk
+    .probe0(average_data),      // input wire [15:0] probe0  
+    .probe1(temp_data)          // input wire [15:0] probe1
+);
+
+
+    
+    
+    
+    // Instantiation of blk_mem_gen_0
+blk_mem_gen_0 blk_mem (
+    .clka(clk_25m),
+    .ena(1'b1),
+    .wea(1'b0),             // Write enable is disabled
+    .addra(average_data),   // Address input
+    .dina(16'b0),           // Tie data input to 0
+    .douta(temp_value)      // Output data
+);
+
+    // Instantiation of clk_wiz_0
+    clk_wiz_0 clk_inst (
+      .clk_25m(clk_25m),
+      .reset(rst),
+      .locked(locked),
+      .clk_in1(clk)
+    );
+    
+    // Instantiation of XADC_capture
+    XADC_capture XADC_capture (
+      .dwe_in(dwe_in),
+      .den_in(den_in),
+      .xadc_temp_en(avg_en),
+      .daddr_in(daddr_in),
+      .xadc_temp_data(temp_data),
+      .do_out(do_out),
+      .drdy_out(drdy_out),
+      .clk(clk_25m),
+      .rst_n(rst)
+    );
+    
+    // Instantiation of xadc_avg
+    xadc_avg xadc_avg (
+      .data_in_en(avg_en),
+      .clk(clk_25m),
+      .data_in(temp_data),
+      .rst_n(rst),
+      .average_data(average_data) // Directly connected to module output
+    );
+    
+    
+    
+    
+    
+    
+     // Instantiate the Seven-segment display driver
+    seven_segment_driver ssd_driver (
+      .temp_value(temp_value),
+      .SEG_A_J1(SEG_A_J1),
+      .SEG_B_J1(SEG_B_J1),
+      .SEG_C_J1(SEG_C_J1),
+      .SEG_D_J1(SEG_D_J1),
+      .SEG_E_J1(SEG_E_J1),
+      .SEG_F_J1(SEG_F_J1),
+      .SEG_G_J1(SEG_G_J1),
+      .SEG_DP_J1(SEG_DP_J1),
+      .SEG_A_J2(SEG_A_J2),
+      .SEG_B_J2(SEG_B_J2),
+      .SEG_C_J2(SEG_C_J2),
+      .SEG_D_J2(SEG_D_J2),
+      .SEG_E_J2(SEG_E_J2),
+      .SEG_F_J2(SEG_F_J2),
+      .SEG_G_J2(SEG_G_J2),
+      .SEG_DP_J2(SEG_DP_J2)
+      );
+
+
+endmodule
